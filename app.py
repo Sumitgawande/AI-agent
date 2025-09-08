@@ -2,18 +2,22 @@ from flask import Flask, request, jsonify
 import requests
 import json
 import mysql.connector
+import dotenv
+import os
+
 
 app = Flask(__name__)
 
-# --- Configuration ---
-API_KEY = "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"
+
+API_KEY = os.environ.get("OPENROUTER_API_KEY")
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
+db_password = os.environ.get("DB_PASSWORD")
 # MODEL = "anthropic/claude-3.7-sonnet"
 MODEL = "openai/gpt-4.1"
 DB_CONFIG = {
     "host": "localhost",
     "user": "root",
-    "password": "Admin@123",
+    "password": db_password,
     "database": "classicmodels"
 }
 
@@ -61,11 +65,10 @@ def ask():
         "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json"
     }
-    # ...existing code...
+   
     response = requests.post(API_URL, headers=headers, json=payload)
     data = response.json()
-    print("OpenRouter response:", data)  # Debug print
-
+    
     if "choices" not in data:
         return jsonify({
             "error": data.get("error", "No 'choices' in response"),
@@ -73,9 +76,9 @@ def ask():
         }), 500
 
     reply = data["choices"][0]["message"]
-    # ...existing code...
+  
 
-    # If Claude wants to call the tool
+    # If LLM wants to call the tool
     if reply.get("tool_calls"):
         print("Tool call received:", reply["tool_calls"][0])
         tool_call = reply["tool_calls"][0]
