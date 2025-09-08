@@ -2,25 +2,25 @@ from flask import Flask, request, jsonify
 import requests
 import json
 import mysql.connector
-import dotenv
 import os
-
 
 app = Flask(__name__)
 
-
 API_KEY = os.environ.get("OPENROUTER_API_KEY")
+print("API KEY:", API_KEY)
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-db_password = os.environ.get("DB_PASSWORD")
-# MODEL = "anthropic/claude-3.7-sonnet"
-MODEL = "openai/gpt-4.1"
+MODEL = "openai/gpt-4.1"  # or any Bedrock-compatible model like Claude
+
 DB_CONFIG = {
     "host": "localhost",
     "user": "root",
-    "password": db_password,
+    "password": os.environ.get("DB_PASSWORD"),
     "database": "classicmodels"
 }
 
+# --------------------------------------------
+# SQL Execution Helper
+# --------------------------------------------
 def execute_sql(query):
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
@@ -33,27 +33,77 @@ def execute_sql(query):
     except Exception as e:
         return {"error": str(e)}
 
+
+def make_json_safe(data):
+    if isinstance(data, list):
+        return [make_json_safe(item) for item in data]
+    elif isinstance(data, tuple):
+        return [make_json_safe(item) for item in data]
+    elif isinstance(data, dict):
+        return {k: make_json_safe(v) for k, v in data.items()}
+    elif isinstance(data, (int, float, str, bool)) or data is None:
+        return data
+    else:
+        return str(data)  # fallback for things like Decimal, datetime, etc.
+
+
+# --------------------------------------------
+# Main Ask Endpoint
+# --------------------------------------------
 @app.route("/ask", methods=["POST"])
 def ask():
-    user_message = request.json.get("question", "")
-    messages = [{"role": "user", "content": user_message}]
-    tools = [{
-    "type": "function",
-    "function": {
-        "name": "run_sql",
-        "description": "Executes a SQL query on the classicmodels MySQL database.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "query": {
-                    "type": "string",
-                    "description": "The SQL query to execute."
-                        }
+    user_question = request.json.get("question", "")
+    if not user_question:
+        return jsonify({"error": "Missing 'question' in request body"}), 400
+
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    # Step 1: Ask LLM to generate SQL + chartType
+    messages = [
+        {
+            "role": "system",
+            "content": """
+You are an assistant that:
+1. Converts natural language questions into SQL queries for a MySQL database.
+2. Suggests the best chart type for visualizing the result (bar, pie, line, etc.), based on user intent or data structure.
+3. If the user did not request a chart, return chartType as "null".
+
+Return only the tool/function call with both SQL and chartType.
+"""
+        },
+        {
+            "role": "user",
+            "content": user_question
+        }
+    ]
+
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "generate_sql_and_chart_type",
+                "description": "Generates SQL and suggests chart type",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "The SQL query to run"
                         },
-            "required": ["query"]
-                    }
+                        "chartType": {
+                            "type": "string",
+                            "description": "Suggested chart type",
+                            "enum": ["bar", "line", "pie", "doughnut", "radar", "scatter", "null"]
+                        }
+                    },
+                    "required": ["query", "chartType"]
                 }
-    }]
+            }
+        }
+    ]
 
     payload = {
         "model": MODEL,
@@ -61,53 +111,81 @@ def ask():
         "tools": tools,
         "max_tokens": 500
     }
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    }
-   
+
     response = requests.post(API_URL, headers=headers, json=payload)
     data = response.json()
-    
+
     if "choices" not in data:
-        return jsonify({
-            "error": data.get("error", "No 'choices' in response"),
-            "raw_response": data
-        }), 500
+        return jsonify({"error": "LLM failed to respond", "raw": data}), 500
 
-    reply = data["choices"][0]["message"]
-  
+    try:
+        tool_call = data["choices"][0]["message"]["tool_calls"][0]
+        args = json.loads(tool_call["function"]["arguments"])
+        sql_query = args["query"]
+        chart_type = args["chartType"]
+    except Exception as e:
+        return jsonify({"error": "Failed to parse SQL or chart type", "details": str(e), "raw": data}), 500
 
-    # If LLM wants to call the tool
-    if reply.get("tool_calls"):
-        print("Tool call received:", reply["tool_calls"][0])
-        tool_call = reply["tool_calls"][0]
-        arguments_raw = tool_call["function"]["arguments"]
-        arguments = json.loads(arguments_raw)
-        sql_query = arguments["query"]
+    # Step 2: Execute SQL
+    sql_result = execute_sql(sql_query)
+    if "error" in sql_result:
+        return jsonify({"error": "SQL execution failed", "details": sql_result}), 500
 
-        sql_result = execute_sql(sql_query)
-        # Send the result back to Claude for a final answer
-        tool_call_id = reply["tool_calls"][0]["id"]
-        followup_payload = {
+    # Step 3: If chart is requested or inferred, generate Chart.js config
+    chart_config = None
+    chart_json = None
+
+    if chart_type != "null":
+        chart_prompt = f"""
+You are a chart generator. Given a SQL result (columns and rows) and a chart type, generate a valid Chart.js configuration object.
+
+Chart type: {chart_type}
+
+Respond ONLY with valid JSON config for Chart.js:
+{{
+  "type": "...",
+  "data": {{ ... }},
+  "options": {{}}
+}}
+
+"""
+
+
+        print("type",type(chart_config))
+        print("chart config",chart_config)
+        print("sql_result",sql_result)
+        safe_sql_result = make_json_safe(sql_result)
+        print("Safe SQL result:", safe_sql_result)
+        chart_messages = [
+            {"role": "system", "content": chart_prompt},
+            {"role": "user", "content": f"Here is the SQL result:\n{json.dumps(safe_sql_result)}"}
+        ]
+
+        chart_payload = {
             "model": MODEL,
-            "messages": messages + [
-                {"role": "assistant", "tool_calls": reply["tool_calls"]},
-                {
-                    "role": "tool",
-                    "tool_call_id": tool_call_id,
-                    "name": "run_sql",
-                    "content": str(sql_result)
-                }
-            ],
-            "max_tokens": 500
+            "messages": chart_messages,
+            "max_tokens": 1000
         }
-        followup = requests.post(API_URL, headers=headers, json=followup_payload)
-        followup_data = followup.json()
-        final_answer = followup_data["choices"][0]["message"]["content"]
-        return jsonify({"answer": final_answer, "sql": sql_query, "result": sql_result})
-    else:
-        return jsonify({"answer": reply["content"]})
 
+        chart_response = requests.post(API_URL, headers=headers, json=chart_payload)
+        chart_data = chart_response.json()
+
+        try:
+            chart_json = chart_data["choices"][0]["message"]["content"]
+            chart_config = json.loads(chart_json)
+        except Exception as e:
+            chart_config = None
+
+    # Step 4: Return the result
+    return jsonify({
+        "question": user_question,
+        "sql": sql_query,
+        "result": sql_result,
+        "chartType": chart_type,
+        "chartConfig": chart_config,
+        "rawChartJson": chart_json  # in case frontend wants to handle formatting
+    })
+
+# --------------------------------------------
 if __name__ == "__main__":
-    app.run(debug=True) 
+    app.run(debug=True)
