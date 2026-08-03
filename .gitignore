@@ -1,0 +1,16 @@
+# Environment files
+.env
+.env.*
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+
+# Test artifacts
+.pytest_cache/
