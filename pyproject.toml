@@ -1,0 +1,41 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "ai-agent"
+version = "0.1.0"
+description = "A simple AI agent starter project"
+readme = "README.md"
+authors = ["AI Agent Maintainers"]
+packages = [
+    { include = "app" }
+]
+
+[tool.poetry.dependencies]
+python = ">=3.8"
+python-dotenv = "^1.0.0"
+
+[tool.poetry.scripts]
+ai-agent = "app.agents.main:main"
+
+[tool.poetry.dev-dependencies]
+black = "^24.3.0"
+mypy = "^1.10.1"
+ruff = "^0.0.284"
+pre-commit = "^4.5.0"
+
+[tool.black]
+line-length = 88
+target-version = ["py38"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+select = ["E", "F", "I", "B", "S"]
+
+[tool.mypy]
+python_version = 3.8
+disallow_untyped_defs = false
+ignore_missing_imports = true
+strict_optional = true

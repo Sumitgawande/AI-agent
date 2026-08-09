@@ -16,15 +16,20 @@ This project provides a practical foundation for a modern AI agent with:
 
 ## Quick start
 
-1. Create a virtual environment
-2. Install dependencies
-3. Run the CLI
+1. Install Poetry if you do not already have it.
+2. Create a virtual environment with Poetry.
+3. Run the CLI.
 
 ```bash
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-python -m ai_agent.main
+poetry install
+poetry run python -m app.agents.main
+```
+
+Alternatively, launch an interactive shell:
+
+```bash
+poetry shell
+python -m app.agents.main
 ```
 
 ## Configuration

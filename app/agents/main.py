@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from .agent import create_agent
+from ..core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def main() -> None:

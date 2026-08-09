@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from ai_agent.agent import create_agent
+from app.agents.agent import create_agent
 
 
 def test_local_time_response():
