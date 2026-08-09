@@ -21,9 +21,9 @@ def calculator(arg: str) -> str:
     try:
         expr = arg.strip()
         if expr.lower().startswith("calculate"):
-            expr = expr[len("calculate"):].strip()
+            expr = expr[len("calculate") :].strip()
         expr = expr.replace("^", "**")
-        expr = ''.join(ch for ch in expr if ch.isdigit() or ch in "+-*/(). ,")
+        expr = "".join(ch for ch in expr if ch.isdigit() or ch in "+-*/(). ,")
         if not expr:
             return "Calculation failed: no expression found"
         result = eval(expr, {"__builtins__": {}}, {"math": math})
@@ -45,7 +45,7 @@ def knowledge_lookup(arg: str) -> str:
 
 
 def summarize_text(arg: str) -> str:
-    sentences = [s.strip() for s in arg.split('.') if s.strip()]
+    sentences = [s.strip() for s in arg.split(".") if s.strip()]
     if not sentences:
         return "No text to summarize."
     summary = " ".join(sentences[:2])
@@ -54,8 +54,24 @@ def summarize_text(arg: str) -> str:
 
 def build_default_tools() -> List[Tool]:
     return [
-        Tool(name="get_current_time", description="Return the current date and time", func=get_current_time),
-        Tool(name="calculator", description="Evaluate a simple arithmetic expression", func=calculator),
-        Tool(name="knowledge_lookup", description="Answer general questions about Python, AI, and agents", func=knowledge_lookup),
-        Tool(name="summarize_text", description="Create a short summary from a block of text", func=summarize_text),
+        Tool(
+            name="get_current_time",
+            description="Return the current date and time",
+            func=get_current_time,
+        ),
+        Tool(
+            name="calculator",
+            description="Evaluate a simple arithmetic expression",
+            func=calculator,
+        ),
+        Tool(
+            name="knowledge_lookup",
+            description="Answer general questions about Python, AI, and agents",
+            func=knowledge_lookup,
+        ),
+        Tool(
+            name="summarize_text",
+            description="Create a short summary from a block of text",
+            func=summarize_text,
+        ),
     ]

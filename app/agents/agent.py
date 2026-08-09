@@ -33,9 +33,11 @@ class Agent:
         self.add_message("user", user_input)
         logger.info(
             "run_request",
-            provider=self.provider,
-            model_name=self.model_name,
-            user_input=user_input,
+            extra={
+                "provider": self.provider,
+                "model_name": self.model_name,
+                "user_input": user_input,
+            },
         )
 
         if not user_input.strip():
@@ -47,7 +49,7 @@ class Agent:
         return self._run_remote(user_input)
 
     def _run_local(self, user_input: str) -> str:
-        logger.info("local_execution", user_input=user_input)
+        logger.info("local_execution", extra={"user_input": user_input})
         lower = user_input.lower()
 
         if "time" in lower:
@@ -72,14 +74,17 @@ class Agent:
         )
 
     def _run_remote(self, user_input: str) -> str:
-        logger.info("remote_execution", provider=self.provider, model_name=self.model_name)
+        logger.info(
+            "remote_execution",
+            extra={"provider": self.provider, "model_name": self.model_name},
+        )
         return (
             f"Remote model path is not implemented yet. "
             f"Using provider={self.provider} model={self.model_name}."
         )
 
     def _find_tool(self, name: str) -> Tool:
-        logger.debug("find_tool", tool=name)
+        logger.debug("find_tool", extra={"tool": name})
         for tool in self.tools:
             if tool.name == name:
                 return tool
@@ -87,5 +92,5 @@ class Agent:
 
 
 def create_agent() -> Agent:
-    logger.info("create_agent", name="AI-Agent")
+    logger.info("create_agent", extra={"name": "AI-Agent"})
     return Agent()
