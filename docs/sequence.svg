@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="200" viewBox="0 0 800 200">
+  <rect width="100%" height="100%" fill="#fff"/>
+  <text x="20" y="40" font-size="14" font-family="monospace">Mermaid source available at docs/sequence.mmd</text>
+  <text x="20" y="70" font-size="12" font-family="monospace">To generate a rendered SVG run:</text>
+  <text x="20" y="95" font-size="12" font-family="monospace">npx @mermaid-js/mermaid-cli -i docs/sequence.mmd -o docs/sequence.svg</text>
+</svg>

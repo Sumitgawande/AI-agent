@@ -43,10 +43,10 @@ class Agent:
         if not user_input.strip():
             return "Please provide a task."
 
-        if self.provider == "local" or not os.getenv("OPENAI_API_KEY"):
-            return self._run_local(user_input)
-
-        return self._run_remote(user_input)
+        # Business logic (local execution) only — provider routing
+        # is handled by the application/service layer so this class
+        # remains provider-agnostic.
+        return self._run_local(user_input)
 
     def _run_local(self, user_input: str) -> str:
         logger.info("local_execution", extra={"user_input": user_input})
@@ -92,5 +92,5 @@ class Agent:
 
 
 def create_agent() -> Agent:
-    logger.info("create_agent", extra={"name": "AI-Agent"})
+    logger.info("create_agent", extra={"agent_name": "AI-Agent"})
     return Agent()

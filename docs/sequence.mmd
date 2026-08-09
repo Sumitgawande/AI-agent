@@ -1,0 +1,18 @@
+%% Sequence diagram: request flow through the system
+sequenceDiagram
+  participant C as Client
+  participant F as FastAPI
+  participant S as Services
+  participant A as Agent
+  participant L as LLM
+  participant T as Tools
+
+  C->>F: POST /api/v1/chat
+  F->>S: validate & map schema
+  S->>A: execute/run
+  A->>L: request generation
+  A->>T: use tool (if needed)
+  L-->>A: LLMResponse
+  A-->>S: result
+  S-->>F: response schema
+  F-->>C: HTTP response

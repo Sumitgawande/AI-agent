@@ -13,7 +13,7 @@ def chat(
 ) -> ChatResponse:
     try:
         result = agent_svc.run(payload.message, payload.session_id)
-    except Exception as exc:
+    except Exception:
         raise HTTPException(status_code=500, detail="AGENT_EXECUTION_FAILED")
 
     return ChatResponse(response=result, session_id=payload.session_id)

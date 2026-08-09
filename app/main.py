@@ -1,9 +1,10 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
 import logging
 
-from .core.logging import configure_logging
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+
 from .api.router import api_router
+from .core.logging import configure_logging
 
 logger = logging.getLogger(__name__)
 

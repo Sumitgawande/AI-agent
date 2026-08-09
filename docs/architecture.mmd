@@ -1,0 +1,34 @@
+%% Architecture diagram (Mermaid source)
+flowchart LR
+  Client[Client]
+  subgraph API
+    direction TB
+    FastAPI[FastAPI API]
+  end
+
+  subgraph App
+    direction TB
+    Schemas[Schemas (Pydantic)]
+    Services[Services (Application layer)]
+    Agent[Agent (business logic)]
+    Tools[Tools]
+    LLM[LLM Providers]
+  end
+
+  Client --> FastAPI
+  FastAPI --> Schemas
+  FastAPI --> Services
+  Services --> Agent
+  Agent --> Tools
+  Agent --> LLM
+
+  subgraph Providers
+    direction LR
+    OpenAI[OpenAI]
+    Anthropic[Anthropic]
+    Bedrock[Bedrock]
+  end
+
+  LLM --> OpenAI
+  LLM --> Anthropic
+  LLM --> Bedrock

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from .agent import create_agent
 from ..core.logging import get_logger
+from .agent import create_agent
 
 logger = get_logger(__name__)
 

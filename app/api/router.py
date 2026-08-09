@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from .routes import health, chat, agent
+from .routes import agent, chat, health
 
 api_router = APIRouter(prefix="/api/v1")
 
