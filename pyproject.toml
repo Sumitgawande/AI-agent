@@ -15,6 +15,10 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.8"
 python-dotenv = "^1.0.0"
+fastapi = "^0.141.1"
+uvicorn = "^0.25.0"
+sqlalchemy = "^2.0.30"
+"psycopg[binary]" = "^3.4.0"
 
 [tool.poetry.scripts]
 ai-agent = "app.agents.main:main"

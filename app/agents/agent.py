@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 from typing import List
 
 from ..core.logging import get_logger
+from ..tools.executor import ToolExecutor
+from ..tools.registry import ToolRegistry
 from ..tools.tools import Tool, build_default_tools
 
 logger = get_logger(__name__)
@@ -25,6 +27,10 @@ class Agent:
     def __post_init__(self) -> None:
         self.provider = os.getenv("MODEL_PROVIDER", "local")
         self.model_name = os.getenv("MODEL_NAME", "fallback")
+        self.tool_registry = ToolRegistry()
+        for tool in self.tools:
+            self.tool_registry.register(tool)
+        self.tool_executor = ToolExecutor(self.tool_registry)
 
     def add_message(self, role: str, content: str) -> None:
         self.memory.append(AgentMessage(role=role, content=content))
@@ -85,10 +91,13 @@ class Agent:
 
     def _find_tool(self, name: str) -> Tool:
         logger.debug("find_tool", extra={"tool": name})
-        for tool in self.tools:
-            if tool.name == name:
-                return tool
-        raise ValueError(f"Tool {name} not found")
+        return self.tool_registry.get(name)
+
+    def get_available_tools(self):
+        return self.tool_registry.get_available_tools()
+
+    def run_tool(self, tool_name: str, arguments: dict):
+        return self.tool_executor.execute(tool_name, arguments)
 
 
 def create_agent() -> Agent:

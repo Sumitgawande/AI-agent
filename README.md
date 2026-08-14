@@ -36,6 +36,14 @@ python -m app.agents.main
 
 Copy `.env.example` to `.env` and set your preferred values.
 
+For Postgres, set `DATABASE_URL` to a live connection string such as:
+
+```bash
+DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/ai_agent
+```
+
+If `DATABASE_URL` is unset, the app falls back to a local SQLite file for development.
+
 The `.env` file is ignored by Git via [.gitignore](.gitignore) so secrets and local settings stay out of version control.
 
 ## Architecture

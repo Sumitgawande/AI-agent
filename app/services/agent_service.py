@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Optional
+from typing import Any, Optional
 
 from ..agents.agent import create_agent
 from ..llm.factory import get_llm_provider
@@ -20,14 +20,14 @@ class AgentService:
             self._llm_provider = get_llm_provider(provider_name)
         return self._llm_provider
 
-    def run(self, input_text: str, session_id: Optional[str] = None) -> str:
+    def run(self, input_text: str, session_id: Optional[str] = None, context: list[dict[str, Any]] | None = None) -> str:
         # if agent configured as 'local', run local logic
         if getattr(self._agent, "provider", "local") == "local":
             return self._agent.run(input_text)
 
         # otherwise delegate to configured LLM provider
         provider = self._get_provider()
-        resp = provider.generate(input_text)
+        resp = provider.generate(input_text, context=context)
         return resp.content
 
 
